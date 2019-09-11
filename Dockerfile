@@ -646,26 +646,29 @@ COPY bin/fail /usr/bin/
 #===============
 # TODO: Use Google fingerprint to verify downloads
 #  https://www.google.de/linuxrepositories/
-ARG EXPECTED_CHROME_VERSION="74.0.3729.131"
+ARG EXPECTED_CHROME_VERSION="73.0.3683.86"
 ENV CHROME_URL="https://dl.google.com/linux/direct" \
     CHROME_BASE_DEB_PATH="/home/seluser/chrome-deb/google-chrome" \
     GREP_ONLY_NUMS_VER="[0-9.]{2,20}"
 
 LABEL selenium_chrome_version "${EXPECTED_CHROME_VERSION}"
 
+ENV CHROME_EXEC="http://dl.google.com/linux/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${EXPECTED_CHROME_VERSION}-1_amd64.deb"
+
 # Layer size: huge: 196.3 MB
 RUN apt -qqy update \
   && mkdir -p chrome-deb \
-  && wget -nv "${CHROME_URL}/google-chrome-stable_current_amd64.deb" \
+  && wget -nv "${CHROME_EXEC}" \
           -O "./chrome-deb/google-chrome-stable_current_amd64.deb" \
   && apt -qyy --no-install-recommends install \
-        "${CHROME_BASE_DEB_PATH}-stable_current_amd64.deb" \
-  && rm "${CHROME_BASE_DEB_PATH}-stable_current_amd64.deb" \
-  && rm -rf ./chrome-deb \
+        "./chrome-deb/google-chrome-stable_current_amd64.deb" \
+  && rm "./chrome-deb/google-chrome-stable_current_amd64.deb"
+
+RUN  rm -rf ./chrome-deb \
   && apt -qyy autoremove \
   && rm -rf /var/lib/apt/lists/* \
   && apt -qyy clean \
-  && export CH_STABLE_VER=$(/usr/bin/google-chrome-stable --version | grep -iEo "${GREP_ONLY_NUMS_VER}") \
+  && export CH_STABLE_VER=$(/usr/bin/google-chrome --version | grep -iEo "${GREP_ONLY_NUMS_VER}") \
   && echo "CH_STABLE_VER:'${CH_STABLE_VER}' vs EXPECTED_CHROME_VERSION:'${EXPECTED_CHROME_VERSION}'" \
   && [ "${CH_STABLE_VER}" = "${EXPECTED_CHROME_VERSION}" ] || fail
 
@@ -762,6 +765,7 @@ ENV DEFAULT_SELENIUM_HUB_PORT="24444" \
 #   internal ports since you can map them to the host via `docker run -p`
 # SELENIUM_HUB_PROTO
 # SELENIUM_HUB_HOST
+
 # SELENIUM_NODE_HOST
 #   You may want to connect to another hub
 # SELENIUM_HUB_PARAMS
